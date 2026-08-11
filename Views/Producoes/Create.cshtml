@@ -1,0 +1,17 @@
+@model CosturaProducao.ViewModels.ProducaoCreateVm
+@{ ViewData["Title"] = "Nova produção"; }
+<section class="dashboard" data-testid="production-form-page">
+    <div class="page-heading"><div><p class="eyebrow">NOVA ORDEM · PROCESSOS E PRAZOS</p><h1>Criar produção</h1></div><a href="/Producoes" data-testid="production-cancel-link">Voltar</a></div>
+    <form method="post" class="registration-form production-form" data-testid="production-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="form-error" data-testid="production-form-error"></div>
+        <label asp-for="ClientId">Cliente <select asp-for="ClientId" data-testid="production-client-select"><option value="">Selecione</option>@foreach (var item in Model.Clients) { <option value="@item.Id">@item.Name</option> }</select></label>
+        <label asp-for="PieceModelId">Modelo da peça <select asp-for="PieceModelId" data-testid="production-piece-select"><option value="">Selecione</option>@foreach (var item in Model.Pieces) { <option value="@item.Id">@item.Name</option> }</select></label>
+        <label asp-for="Color">Cor <input asp-for="Color" data-testid="production-color-input" /></label>
+        <label asp-for="TotalQuantity">Quantidade total <input asp-for="TotalQuantity" type="number" min="1" data-testid="production-quantity-input" /></label>
+        <div class="date-grid"><label asp-for="ProductionDate">Data da produção <input asp-for="ProductionDate" type="date" data-testid="production-date-input" /></label><label asp-for="DeliveryDate">Data de entrega <input asp-for="DeliveryDate" type="date" data-testid="production-delivery-date-input" /></label></div>
+        <fieldset class="process-options"><legend>Processos desta produção</legend>@foreach (var service in Model.Services) { <label class="check-line"><input type="checkbox" name="ServiceProcessIds" value="@service.Id" @(Model.ServiceProcessIds.Contains(service.Id) ? "checked" : "") data-testid="production-service-@service.Id" /><span>@service.Name</span><small>R$ @service.Price.ToString("N2") por peça</small></label> }</fieldset>
+        <label asp-for="Notes">Observações <textarea asp-for="Notes" data-testid="production-notes-input"></textarea></label>
+        <button class="btn btn-primary" type="submit" data-testid="production-save-button">Criar produção</button>
+    </form>
+</section>

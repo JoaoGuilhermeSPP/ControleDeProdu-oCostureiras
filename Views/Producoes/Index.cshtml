@@ -1,0 +1,14 @@
+@model CosturaProducao.ViewModels.ProducaoIndexVm
+@{ ViewData["Title"] = "Produções"; }
+<section class="dashboard" data-testid="production-list-page">
+    <div class="page-heading"><div><p class="eyebrow">PRODUÇÃO · ORDEM DE TRABALHO</p><h1>Produções</h1></div><a class="btn btn-primary" href="/Producoes/Create" data-testid="production-create-button">Nova produção</a></div>
+    @if (TempData["Success"] is not null) { <div class="success-message" data-testid="production-success-message">@TempData["Success"]</div> }
+    <div class="registration-table" data-testid="production-table">
+        <div class="table-row production-row table-head"><span>Cliente / modelo</span><span>Cor</span><span>Quantidade</span><span>Entrega</span><span>Status</span></div>
+        @foreach (var item in Model.Items)
+        {
+            <div class="table-row production-row" data-testid="production-row-@item.Id"><strong>@item.Client<br /><small>@item.Piece</small></strong><span>@item.Color</span><span>@item.Quantity</span><span>@item.DeliveryDate.ToString("dd/MM/yyyy")</span><span>@item.Status</span></div>
+        }
+        @if (Model.Items.Count == 0) { <div class="empty-state" data-testid="production-empty-state"><p>Nenhuma produção criada. Registre a primeira ordem de trabalho.</p></div> }
+    </div>
+</section>

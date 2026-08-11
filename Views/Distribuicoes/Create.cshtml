@@ -1,0 +1,13 @@
+@model CosturaProducao.ViewModels.DistribuicaoCreateVm
+@{ ViewData["Title"] = "Distribuir processo"; }
+<section class="dashboard" data-testid="assignment-form-page">
+    <div class="page-heading"><div><p class="eyebrow">DISTRIBUIÇÃO · COSTUREIRA</p><h1>Entregar processo</h1></div><a href="/Distribuicoes" data-testid="assignment-cancel-link">Voltar</a></div>
+    <form method="post" class="registration-form" data-testid="assignment-form">
+        @Html.AntiForgeryToken()<input type="hidden" asp-for="ProductionProcessId" /><input type="hidden" asp-for="ProductionId" />
+        <p class="form-context" data-testid="assignment-production-context">@Model.ProductionDescription · R$ @Model.PricePerPiece.ToString("N2") por peça</p>
+        <div asp-validation-summary="ModelOnly" class="form-error" data-testid="assignment-form-error"></div>
+        <label asp-for="SeamstressId">Costureira <select asp-for="SeamstressId" data-testid="assignment-seamstress-select"><option value="">Selecione</option>@foreach (var item in Model.Seamstresses) { <option value="@item.Id">@item.Name</option> }</select></label>
+        <label asp-for="PlannedQuantity">Quantidade planejada <input asp-for="PlannedQuantity" type="number" min="1" data-testid="assignment-quantity-input" /></label>
+        <button type="submit" class="btn btn-primary" data-testid="assignment-save-button">Distribuir processo</button>
+    </form>
+</section>

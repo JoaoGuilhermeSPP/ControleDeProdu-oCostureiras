@@ -1,0 +1,21 @@
+@model CosturaProducao.ViewModels.DashboardVm
+@{
+    ViewData["Title"] = "Visão geral";
+}
+<section class="dashboard" data-testid="production-dashboard">
+    <div class="page-heading">
+        <div><p class="eyebrow">PAINEL · HOJE</p><h1>Visão geral</h1></div>
+        <span class="status-chip">Sistema pronto</span>
+    </div>
+    <div class="metric-grid">
+        <article class="metric" data-testid="pending-production-metric"><span>Produções pendentes</span><strong>@Model.PendingProductions</strong><small>Aguardando início</small></article>
+        <article class="metric" data-testid="active-production-metric"><span>Em andamento</span><strong>@Model.ActiveProductions</strong><small>Em produção</small></article>
+        <article class="metric" data-testid="completed-production-metric"><span>Concluídas</span><strong>@Model.CompletedProductions</strong><small>Ordens finalizadas</small></article>
+        <article class="metric" data-testid="monthly-production-metric"><span>Produção do mês</span><strong>@Model.ProducedThisMonth</strong><small>Peças · R$ @Model.AmountThisMonth.ToString("N2")</small></article>
+    </div>
+    <div class="empty-state" data-testid="dashboard-empty-state">
+        <p class="eyebrow">PRÓXIMO PASSO</p>
+        <h2>@Model.UpcomingDeliveries entregas nos próximos 7 dias.</h2>
+        <p>Use a distribuição para atualizar o que cada costureira já produziu e manter o prazo sob controle.</p>
+    </div>
+</section>

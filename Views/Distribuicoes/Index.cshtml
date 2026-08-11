@@ -1,0 +1,21 @@
+@model CosturaProducao.ViewModels.DistribuicaoIndexVm
+@{ ViewData["Title"] = "Distribuição"; }
+<section class="dashboard" data-testid="assignment-list-page">
+    <div class="page-heading"><div><p class="eyebrow">PRODUÇÃO · ACOMPANHAMENTO</p><h1>Distribuição</h1></div></div>
+    @if (TempData["Error"] is not null) { <div class="form-error" data-testid="assignment-error-message">@TempData["Error"]</div> }
+    @foreach (var production in Model.Productions)
+    {
+        <article class="production-board" data-testid="assignment-production-@production.Id"><div class="board-heading"><div><strong>@production.Client</strong><span>@production.Piece · @production.Quantity peças</span></div></div>
+        @foreach (var process in production.Processes)
+        {
+            <div class="process-board" data-testid="assignment-process-@process.Id"><div class="process-heading"><div><strong>@process.Name</strong><span>Planejado: @process.Planned · Produzido: @process.Produced · @process.Status</span></div><a href="/Distribuicoes/Create?productionProcessId=@process.Id" data-testid="assignment-add-@process.Id">Distribuir</a></div>
+            @foreach (var assignment in process.Assignments)
+            {
+                <form method="post" action="/Distribuicoes/UpdateProgress" class="assignment-line" data-testid="assignment-row-@assignment.Id"><input type="hidden" name="AssignmentId" value="@assignment.Id" />@Html.AntiForgeryToken()<strong>@assignment.Seamstress</strong><span>@assignment.Planned peças · R$ @assignment.Price.ToString("N2")</span><input name="ProducedQuantity" type="number" min="0" max="@assignment.Planned" value="@assignment.Produced" data-testid="assignment-produced-@assignment.Id" /><span class="status-label" data-testid="assignment-status-@assignment.Id">@assignment.Status</span><button type="submit" class="link-button" data-testid="assignment-update-@assignment.Id">Atualizar</button><a href="/Pdf/Assignment/@assignment.Id" data-testid="assignment-pdf-@assignment.Id">PDF</a></form>
+            }
+            @if (process.Assignments.Count == 0) { <p class="board-empty" data-testid="assignment-process-empty-@process.Id">Ainda não distribuído.</p> }
+            </div>
+        }
+        </article>
+    }
+</section>
