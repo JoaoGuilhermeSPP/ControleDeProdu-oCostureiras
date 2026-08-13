@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CosturaProducao.Controllers;
 
-[Authorize]
+
 public sealed class DistribuicoesController(ApplicationDbContext db) : Controller
 {
     [HttpGet]

@@ -6,7 +6,12 @@
         <p class="eyebrow">CONTROLE DE PRODUÇÃO · 01</p>
         <h1>O trabalho bem feito começa com uma visão clara.</h1>
         <p class="lead">Organize clientes, peças, processos e entregas em um só lugar.</p>
-        <a class="btn btn-primary btn-lg" href="/Identity/Account/Login" data-testid="owner-login-link">Entrar no painel</a>
+        <a class="btn btn-primary btn-lg"
+           asp-controller="Home"
+           asp-action="Dashboard"
+           data-testid="owner-panel-link">
+            Entrar no painel
+        </a>
     </div>
     <div class="login-manifesto" aria-label="Resumo do sistema" data-testid="production-manifesto">
         <span class="thread-line" aria-hidden="true"></span>

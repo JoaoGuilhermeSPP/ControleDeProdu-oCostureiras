@@ -16,6 +16,7 @@ public sealed class CadastroInputVm
     public string? CaminhoGabarito { get; set; }
     public IFormFile? Gabarito { get; set; }
     public decimal? ValorPorPeca { get; set; }
+    public string? GabaritoAtual { get; internal set; }
 }
 
 public sealed record CadastroRowVm(int Id, string Nome, string? Codigo, string? Complemento, bool Ativo);

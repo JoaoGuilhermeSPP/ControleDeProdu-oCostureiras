@@ -10,7 +10,7 @@ namespace CosturaProducao.Controllers;
 public sealed class HomeController(ApplicationDbContext db) : Controller
 {
     public IActionResult Index() => View();
-    [Authorize]
+
 
     public async Task<IActionResult> Dashboard()
     {

@@ -1,73 +1,251 @@
 @model CosturaProducao.ViewModels.CadastroIndexVm
-@{ ViewData["Title"] = Model.Titulo; }
+
+@{
+    ViewData["Title"] = Model.Titulo;
+}
+
 <section class="dashboard" data-testid="registration-list-page">
-    <div class="page-heading"><div><p class="eyebrow">CADASTROS · BASE OPERACIONAL</p><h1>@Model.Titulo</h1></div><a class="btn btn-primary" href="/Cadastros/Create?tipo=@Model.Tipo" data-testid="registration-create-button">Novo cadastro</a></div>
+
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">CADASTROS · BASE OPERACIONAL</p>
+            <h1>@Model.Titulo</h1>
+        </div>
+
+        <a class="btn btn-primary"
+           href="/Cadastros/Create?tipo=@Model.Tipo"
+           data-testid="registration-create-button">
+            Novo cadastro
+        </a>
+    </div>
+
+
     <nav class="registration-tabs" data-testid="registration-tabs">
-        <a class="@(Model.Tipo == "costureiras" ? "active" : "")" href="?tipo=costureiras" data-testid="seamstress-tab">Costureiras</a>
-        <a class="@(Model.Tipo == "clientes" ? "active" : "")" href="?tipo=clientes" data-testid="client-tab">Clientes</a>
-        <a class="@(Model.Tipo == "servicos" ? "active" : "")" href="?tipo=servicos" data-testid="service-tab">Serviços</a>
-        <a class="@(Model.Tipo == "pecas" ? "active" : "")" href="?tipo=pecas" data-testid="piece-tab">Peças</a>
+
+        <a class="@(Model.Tipo == "costureiras" ? "active" : "")"
+           href="?tipo=costureiras"
+           data-testid="seamstress-tab">
+            Costureiras
+        </a>
+
+        <a class="@(Model.Tipo == "clientes" ? "active" : "")"
+           href="?tipo=clientes"
+           data-testid="client-tab">
+            Clientes
+        </a>
+
+        <a class="@(Model.Tipo == "servicos" ? "active" : "")"
+           href="?tipo=servicos"
+           data-testid="service-tab">
+            Serviços
+        </a>
+
+        <a class="@(Model.Tipo == "pecas" ? "active" : "")"
+           href="?tipo=pecas"
+           data-testid="piece-tab">
+            Peças
+        </a>
+
     </nav>
-    @if (TempData["Success"] is not null) { <div class="success-message" data-testid="registration-success-message">@TempData["Success"]</div> }
-    <div class="registration-table" data-testid="registration-table">
-        <div class="table-row table-head"><span>Nome</span><span>Código / detalhe</span><span>Status</span><span>Ação</span></div>
+
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="success-message"
+             data-testid="registration-success-message">
+
+            @TempData["Success"]
+
+        </div>
+    }
+
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="error-message">
+
+            @TempData["Error"]
+
+        </div>
+    }
+
+
+    <div class="registration-table"
+         data-testid="registration-table">
+
+        <div class="table-row table-head">
+            <span>Nome</span>
+            <span>Código / detalhe</span>
+            <span>Status</span>
+            <span>Ação</span>
+        </div>
+
+
         @foreach (var item in Model.Itens)
         {
-            <div class="table-row" data-testid="registration-row-@item.Id"><strong>@item.Nome</strong><span>@(item.Codigo ?? item.Complemento ?? "—")</span><span class="@(item.Ativo ? "active-status" : "inactive-status")">@(item.Ativo ? "Ativo" : "Inativo")</span><span><form method="post" action="/Cadastros/Toggle" class="inline-form"><input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="tipo" value="@Model.Tipo" />@Html.AntiForgeryToken()<button class="link-button" type="submit" data-testid="registration-toggle-@item.Id">@(item.Ativo ? "Desativar" : "Ativar")</button></form>@if (Model.Tipo == "pecas") { <a href="/Pdf/Template/@item.Id" data-testid="piece-pdf-@item.Id">Gabarito</a> }</span></div>
-        <form asp-controller="Cadastros"
-              asp-action="Delete"
-              method="post"
-              class="d-inline"
-              onsubmit="return confirmarExclusao('@Model.Tipo');">
+            <div class="table-row"
+                 data-testid="registration-row-@item.Id">
 
-            @Html.AntiForgeryToken()
+                <strong>
+                    @item.Nome
+                </strong>
 
-            <input type="hidden"
-                   name="id"
-                   value="@item.Id" />
 
-            <input type="hidden"
-                   name="tipo"
-                   value="@Model.Tipo" />
+                <span>
+                    @(item.Codigo ?? item.Complemento ?? "—")
+                </span>
 
-            <button type="submit"
-                    class="btn btn-danger btn-sm">
 
-                🗑️ Excluir
+                <span class="@(item.Ativo ? "active-status" : "inactive-status")">
+                    @(item.Ativo ? "Ativo" : "Inativo")
+                </span>
 
-            </button>
 
-        </form>
+                <span class="registration-actions">
+
+                    <!-- EDITAR -->
+                    <a asp-controller="Cadastros"
+                       asp-action="Edit"
+                       asp-route-id="@item.Id"
+                       asp-route-tipo="@Model.Tipo"
+                       class="btn btn-primary btn-sm"
+                       data-testid="registration-edit-@item.Id">
+
+                        ✏️ Editar
+
+                    </a>
+
+
+                    <!-- DESATIVAR / ATIVAR -->
+                    <form method="post"
+                          action="/Cadastros/Toggle"
+                          class="inline-form">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="id"
+                               value="@item.Id" />
+
+                        <input type="hidden"
+                               name="tipo"
+                               value="@Model.Tipo" />
+
+                        <button class="btn btn-secondary btn-sm"
+                                type="submit"
+                                data-testid="registration-toggle-@item.Id">
+
+                            @(item.Ativo ? "Desativar" : "Ativar")
+
+                        </button>
+
+                    </form>
+
+
+                    <!-- EXCLUIR -->
+                    <form asp-controller="Cadastros"
+                          asp-action="Delete"
+                          method="post"
+                          class="inline-form"
+                          onsubmit="return confirmarExclusao('@Model.Tipo');">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="id"
+                               value="@item.Id" />
+
+                        <input type="hidden"
+                               name="tipo"
+                               value="@Model.Tipo" />
+
+                        <button type="submit"
+                                class="btn btn-danger btn-sm">
+
+                            🗑️ Excluir
+
+                        </button>
+
+                    </form>
+
+
+                    <!-- GABARITO -->
+                    @if (Model.Tipo == "pecas")
+                    {
+                        <a href="/Pdf/Template/@item.Id"
+                           class="btn btn-secondary btn-sm"
+                           data-testid="piece-pdf-@item.Id">
+
+                            Gabarito
+
+                        </a>
+                    }
+
+                </span>
+
+            </div>
         }
-        @if (Model.Itens.Count == 0) { <div class="empty-state" data-testid="registration-empty-state"><p>Nenhum cadastro ainda. Comece adicionando o primeiro.</p></div> }
-  
+
+
+        @if (Model.Itens.Count == 0)
+        {
+            <div class="empty-state"
+                 data-testid="registration-empty-state">
+
+                <p>
+                    Nenhum cadastro ainda.
+                    Comece adicionando o primeiro.
+                </p>
+
+            </div>
+        }
+
     </div>
+
+
     <script>
+
         function confirmarExclusao(tipo) {
 
-            let mensagem = "Deseja realmente excluir este registro?";
+            let mensagem =
+                "Deseja realmente excluir este registro?";
+
 
             if (tipo === "costureiras") {
+
                 mensagem =
                     "Deseja realmente desativar esta costureira?";
+
             }
+
 
             if (tipo === "clientes") {
+
                 mensagem =
                     "Deseja realmente excluir este cliente?";
+
             }
+
 
             if (tipo === "servicos") {
+
                 mensagem =
                     "Deseja realmente excluir este serviço?";
+
             }
 
+
             if (tipo === "pecas") {
+
                 mensagem =
                     "Deseja realmente excluir esta peça?";
+
             }
+
 
             return confirm(mensagem);
         }
+
     </script>
+
 </section>

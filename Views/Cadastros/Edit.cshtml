@@ -1,0 +1,188 @@
+﻿@model CosturaProducao.ViewModels.CadastroInputVm
+
+@{
+    ViewData["Title"] = "Editar cadastro";
+
+    var isService = Model.Tipo == "servicos";
+    var isPiece = Model.Tipo == "pecas";
+}
+
+<section class="dashboard" data-testid="registration-edit-page">
+
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">
+                EDITAR REGISTRO · @Model.Tipo.ToUpperInvariant()
+            </p>
+
+            <h1>Editar</h1>
+        </div>
+
+        <a href="/Cadastros?tipo=@Model.Tipo"
+           data-testid="registration-cancel-link">
+            Voltar
+        </a>
+    </div>
+
+    <form asp-controller="Cadastros"
+          asp-action="Edit"
+          method="post"
+          enctype="multipart/form-data"
+          class="registration-form"
+          data-testid="registration-edit-form">
+
+        @Html.AntiForgeryToken()
+
+        <!-- Identificação do registro -->
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Tipo" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="form-error"
+             data-testid="registration-form-error">
+        </div>
+
+        <!-- Nome -->
+        <label asp-for="Nome">
+            Nome
+
+            <input asp-for="Nome"
+                   autocomplete="off"
+                   data-testid="registration-name-input" />
+        </label>
+
+        <span asp-validation-for="Nome"
+              class="form-error">
+        </span>
+
+
+        <!-- Campos específicos de Peças -->
+        @if (isPiece)
+        {
+            <label asp-for="Codigo">
+                Código
+
+                <input asp-for="Codigo"
+                       data-testid="piece-code-input" />
+            </label>
+
+            <label asp-for="Cor">
+                Cor
+
+                <input asp-for="Cor"
+                       data-testid="piece-color-input" />
+            </label>
+        }
+
+
+        <!-- Telefone e endereço -->
+        @if (!isService && !isPiece)
+        {
+            <label asp-for="Telefone">
+                Telefone
+
+                <input asp-for="Telefone"
+                       data-testid="registration-phone-input" />
+            </label>
+
+            <label asp-for="Endereco">
+                Endereço
+
+                <input asp-for="Endereco"
+                       data-testid="registration-address-input" />
+            </label>
+        }
+
+
+        <!-- Serviço -->
+        @if (isService)
+        {
+            <label asp-for="ValorPorPeca">
+                Valor por peça
+
+                <input asp-for="ValorPorPeca"
+                       type="number"
+                       min="0"
+                       step="0.01"
+                       data-testid="service-price-input" />
+            </label>
+        }
+
+
+        <!-- Descrição -->
+        @if (isPiece || isService)
+        {
+            <label asp-for="Descricao">
+                Descrição
+
+                <textarea asp-for="Descricao"
+                          data-testid="registration-description-input">
+                    </textarea>
+            </label>
+        }
+
+
+        <!-- Gabarito da peça -->
+        @if (isPiece)
+        {
+            @if (!string.IsNullOrWhiteSpace(Model.GabaritoAtual))
+            {
+                <div class="current-template">
+
+                    <p>
+                        Gabarito atual:
+                    </p>
+
+                    <img src="@Model.GabaritoAtual"
+                         alt="Gabarito atual"
+                         style="max-width: 300px; max-height: 300px;" />
+
+                </div>
+            }
+
+            <label asp-for="Gabarito">
+                Alterar imagem do gabarito
+
+                <input asp-for="Gabarito"
+                       type="file"
+                       accept="image/png,image/jpeg,image/webp"
+                       data-testid="piece-template-input" />
+            </label>
+
+            <small>
+                Deixe vazio para manter o gabarito atual.
+            </small>
+        }
+
+
+        <!-- Observações -->
+        @if (!isService && !isPiece)
+        {
+            <label asp-for="Observacoes">
+                Observações
+
+                <textarea asp-for="Observacoes"
+                          data-testid="registration-notes-input">
+                    </textarea>
+            </label>
+        }
+
+
+        <div class="form-actions">
+
+            <a href="/Cadastros?tipo=@Model.Tipo"
+               class="btn btn-secondary">
+                Cancelar
+            </a>
+
+            <button class="btn btn-primary"
+                    type="submit"
+                    data-testid="registration-save-button">
+                Salvar alterações
+            </button>
+
+        </div>
+
+    </form>
+
+</section>

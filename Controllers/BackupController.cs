@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CosturaProducao.Controllers;
 
-[Authorize]
 public class BackupController : Controller
 {
     private readonly BackupService _backupService;

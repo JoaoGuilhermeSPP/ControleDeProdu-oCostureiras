@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CosturaProducao.Controllers;
 
-[Authorize]
+
 
 public sealed class PdfController(ApplicationDbContext db, IPdfService pdf, IWebHostEnvironment environment) : Controller
 {

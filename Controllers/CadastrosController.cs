@@ -1,13 +1,11 @@
 using CosturaProducao.Data;
 using CosturaProducao.Models;
 using CosturaProducao.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CosturaProducao.Controllers;
 
-[Authorize]
 
 public sealed class CadastrosController(ApplicationDbContext db, IWebHostEnvironment environment) : Controller
 {
@@ -78,7 +76,210 @@ public sealed class CadastrosController(ApplicationDbContext db, IWebHostEnviron
         TempData["Success"] = $"{Titulo(input.Tipo)} salvo com sucesso.";
         return RedirectToAction(nameof(Index), new { tipo = input.Tipo });
     }
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id, string tipo)
+    {
+        if (!Tipos.Contains(tipo))
+            return NotFound();
 
+        CadastroInputVm? model = tipo switch
+        {
+            "costureiras" => await db.Seamstresses
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => new CadastroInputVm
+                {
+                    Id = x.Id,
+                    Tipo = tipo,
+                    Nome = x.Name,
+                    Telefone = x.Phone,
+                    Endereco = x.Address,
+                    Observacoes = x.Notes
+                })
+                .FirstOrDefaultAsync(),
+
+            "clientes" => await db.Clients
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => new CadastroInputVm
+                {
+                    Id = x.Id,
+                    Tipo = tipo,
+                    Nome = x.Name,
+                    Telefone = x.Phone,
+                    Endereco = x.Address,
+                    Observacoes = x.Notes
+                })
+                .FirstOrDefaultAsync(),
+
+            "servicos" => await db.ServiceProcesses
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => new CadastroInputVm
+                {
+                    Id = x.Id,
+                    Tipo = tipo,
+                    Nome = x.Name,
+                    Descricao = x.Description,
+                    ValorPorPeca = x.DefaultPricePerPiece
+                })
+                .FirstOrDefaultAsync(),
+
+            "pecas" => await db.PieceModels
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => new CadastroInputVm
+                {
+                    Id = x.Id,
+                    Tipo = tipo,
+                    Nome = x.Name,
+                    Codigo = x.Code,
+                    Cor = x.Color,
+                    Descricao = x.Description,
+                    GabaritoAtual = x.TemplateImagePath
+                })
+                .FirstOrDefaultAsync(),
+
+            _ => null
+        };
+
+        if (model is null)
+            return NotFound();
+
+        return View(model);
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(CadastroInputVm input)
+    {
+        if (!Tipos.Contains(input.Tipo))
+            return NotFound();
+
+        if (input.Id <= 0)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(input.Nome))
+            ModelState.AddModelError(nameof(input.Nome), "Informe o nome.");
+
+        if (input.Tipo == "servicos" &&
+            (input.ValorPorPeca is null || input.ValorPorPeca < 0))
+        {
+            ModelState.AddModelError(
+                nameof(input.ValorPorPeca),
+                "Informe um valor por peça igual ou maior que zero."
+            );
+        }
+
+        if (input.Tipo == "pecas" &&
+            string.IsNullOrWhiteSpace(input.Codigo))
+        {
+            ModelState.AddModelError(
+                nameof(input.Codigo),
+                "Informe o código da peça."
+            );
+        }
+
+        if (input.Tipo == "pecas" &&
+            !string.IsNullOrWhiteSpace(input.Codigo) &&
+            await db.PieceModels.AnyAsync(x =>
+                x.Code == input.Codigo.Trim() &&
+                x.Id != input.Id))
+        {
+            ModelState.AddModelError(
+                nameof(input.Codigo),
+                "Esse código já está cadastrado."
+            );
+        }
+
+        if (!ModelState.IsValid)
+            return View(input);
+
+        switch (input.Tipo)
+        {
+            case "costureiras":
+                {
+                    var costureira = await db.Seamstresses.FindAsync(input.Id);
+
+                    if (costureira is null)
+                        return NotFound();
+
+                    costureira.Name = input.Nome.Trim();
+                    costureira.Phone = input.Telefone;
+                    costureira.Address = input.Endereco;
+                    costureira.Notes = input.Observacoes;
+
+                    break;
+                }
+
+            case "clientes":
+                {
+                    var cliente = await db.Clients.FindAsync(input.Id);
+
+                    if (cliente is null)
+                        return NotFound();
+
+                    cliente.Name = input.Nome.Trim();
+                    cliente.Phone = input.Telefone;
+                    cliente.Address = input.Endereco;
+                    cliente.Notes = input.Observacoes;
+
+                    break;
+                }
+
+            case "servicos":
+                {
+                    var servico = await db.ServiceProcesses.FindAsync(input.Id);
+
+                    if (servico is null)
+                        return NotFound();
+
+                    servico.Name = input.Nome.Trim();
+                    servico.Description = input.Descricao;
+                    servico.DefaultPricePerPiece = input.ValorPorPeca ?? 0;
+
+                    break;
+                }
+
+            case "pecas":
+                {
+                    var peca = await db.PieceModels.FindAsync(input.Id);
+
+                    if (peca is null)
+                        return NotFound();
+
+                    peca.Name = input.Nome.Trim();
+                    peca.Code = input.Codigo!.Trim();
+                    peca.Color = input.Cor;
+                    peca.Description = input.Descricao;
+
+                    // Se foi enviado um novo gabarito
+                    if (input.Gabarito is not null &&
+                        input.Gabarito.Length > 0)
+                    {
+                        var oldTemplate = peca.TemplateImagePath;
+
+                        var newTemplate = await SaveTemplateAsync(input.Gabarito);
+
+                        peca.TemplateImagePath = newTemplate;
+
+                        if (!string.IsNullOrWhiteSpace(oldTemplate))
+                            DeleteTemplate(oldTemplate);
+                    }
+
+                    break;
+                }
+        }
+
+        await db.SaveChangesAsync();
+
+        TempData["Success"] =
+            $"{Titulo(input.Tipo)} atualizado com sucesso.";
+
+        return RedirectToAction(
+            nameof(Index),
+            new { tipo = input.Tipo }
+        );
+    }
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Toggle(int id, string tipo)

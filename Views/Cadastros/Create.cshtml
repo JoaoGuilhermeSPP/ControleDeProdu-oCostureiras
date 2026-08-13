@@ -7,12 +7,78 @@
         <div asp-validation-summary="ModelOnly" class="form-error" data-testid="registration-form-error"></div>
         <label asp-for="Nome">Nome <input asp-for="Nome" autocomplete="off" data-testid="registration-name-input" /></label>
         <span asp-validation-for="Nome" class="form-error"></span>
-        @if (isPiece) { <label asp-for="Codigo">Código <input asp-for="Codigo" data-testid="piece-code-input" /></label><label asp-for="Cor">Cor <input asp-for="Cor" data-testid="piece-color-input" /></label> }
-        @if (!isService) { <label asp-for="Telefone">Telefone <input asp-for="Telefone" data-testid="registration-phone-input" /></label><label asp-for="Endereco">Endereço <input asp-for="Endereco" data-testid="registration-address-input" /></label> }
-        @if (isService) { <label asp-for="ValorPorPeca">Valor por peça <input asp-for="ValorPorPeca" type="number" min="0" step="0.01" data-testid="service-price-input" /></label> }
-        @if (isPiece || isService) { <label asp-for="Descricao">Descrição <textarea asp-for="Descricao" data-testid="registration-description-input"></textarea></label> }
-        @if (isPiece) { <label asp-for="Gabarito">Imagem do gabarito <input asp-for="Gabarito" type="file" accept="image/png,image/jpeg,image/webp" data-testid="piece-template-input" /></label> }
-        @if (!isService && !isPiece) { <label asp-for="Observacoes">Observações <textarea asp-for="Observacoes" data-testid="registration-notes-input"></textarea></label> }
-        <button class="btn btn-primary" type="submit" data-testid="registration-save-button">Salvar cadastro</button>
+        @if (isPiece)
+        {
+            <label asp-for="Codigo">
+                Código
+                <input asp-for="Codigo"
+                       data-testid="piece-code-input" />
+            </label>
+
+            <label asp-for="Cor">
+                Cor
+                <input asp-for="Cor"
+                       data-testid="piece-color-input" />
+            </label>
+        }
+
+        @if (!isService && !isPiece)
+        {
+            <label asp-for="Telefone">
+                Telefone
+                <input asp-for="Telefone"
+                       data-testid="registration-phone-input" />
+            </label>
+
+            <label asp-for="Endereco">
+                Endereço
+                <input asp-for="Endereco"
+                       data-testid="registration-address-input" />
+            </label>
+        }
+
+        @if (isService && !isPiece)
+        {
+            <label asp-for="ValorPorPeca">
+                Valor por peça
+                <input asp-for="ValorPorPeca"
+                       type="number"
+                       min="0"
+                       step="0.01"
+                       data-testid="service-price-input" />
+            </label>
+        }
+
+        @if (isPiece || isService)
+        {
+            <label asp-for="Descricao">
+                Descrição
+
+                <textarea asp-for="Descricao"
+                          data-testid="registration-description-input"></textarea>
+            </label>
+        }
+
+        @if (isPiece)
+        {
+            <label asp-for="Gabarito">
+                Imagem do gabarito
+                <input asp-for="Gabarito"
+                       type="file"
+                       accept="image/png,image/jpeg,image/webp"
+                       data-testid="piece-template-input" />
+            </label>
+        }
+
+        @if (!isService && !isPiece)
+        {
+            <label asp-for="Observacoes">
+                Observações
+
+                <textarea asp-for="Observacoes"
+                          data-testid="registration-notes-input"></textarea>
+            </label>
+        }
+         <button class="btn btn-primary" type="submit" data-testid="registration-save-button">Salvar cadastro</button>
     </form>
 </section>

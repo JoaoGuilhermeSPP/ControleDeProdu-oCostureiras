@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CosturaProducao.Controllers;
 
-[Authorize]
 
 public sealed class ProducoesController(ApplicationDbContext db) : Controller
 {
