@@ -1,7 +1,6 @@
 using CosturaProducao.Data;
 using CosturaProducao.Models;
 using CosturaProducao.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,23 +10,102 @@ namespace CosturaProducao.Controllers;
 public sealed class DistribuicoesController(ApplicationDbContext db) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string filtro = "todos")
     {
-        var productions = await db.Productions.AsNoTracking()
-            .Include(x => x.Client).Include(x => x.PieceModel)
-            .Include(x => x.Processes).ThenInclude(x => x.ServiceProcess)
-            .Include(x => x.Processes).ThenInclude(x => x.Assignments).ThenInclude(x => x.Seamstress)
-            .OrderBy(x => x.DeliveryDate).ToListAsync();
+        if (filtro != "todos" &&
+            filtro != "andamento" &&
+            filtro != "finalizadas")
+        {
+            filtro = "todos";
+        }
+
+        var productions = await db.Productions
+            .AsNoTracking()
+            .Include(x => x.Client)
+            .Include(x => x.PieceModel)
+            .Include(x => x.Processes)
+                .ThenInclude(x => x.ServiceProcess)
+            .Include(x => x.Processes)
+                .ThenInclude(x => x.Assignments)
+                    .ThenInclude(x => x.Seamstress)
+            .OrderBy(x => x.DeliveryDate)
+            .ToListAsync();
+
+        var productionViewModels = productions
+            .Select(p =>
+            {
+                var processes = p.Processes
+                    .Select(process =>
+                        new DistribuicaoProcessVm(
+                            process.Id,
+                            process.ServiceProcess.Name,
+                            process.PricePerPiece,
+                            process.Assignments.Sum(x => x.PlannedQuantity),
+                            process.Assignments.Sum(x => x.ProducedQuantity),
+                            ProcessStatus(process, p.TotalQuantity),
+                            process.Assignments
+                                .Select(a =>
+                                    new AssignmentVm(
+                                        a.Id,
+                                        a.Seamstress.Name,
+                                        a.PlannedQuantity,
+                                        a.ProducedQuantity,
+                                        a.PricePerPiece,
+                                        a.TotalAmount,
+                                        a.Status.ToString()))
+                                .ToList()))
+                    .ToList();
+
+                return new
+                {
+                    Production = new DistribuicaoProductionVm(
+                        p.Id,
+                        p.Client.Name,
+                        p.PieceModel.Name,
+                        p.TotalQuantity,
+                        processes),
+
+                    Finalizada = IsProductionCompleted(p)
+                };
+            });
+
+        if (filtro == "finalizadas")
+        {
+            productionViewModels =
+                productionViewModels.Where(x => x.Finalizada);
+        }
+        else if (filtro == "andamento")
+        {
+            productionViewModels =
+                productionViewModels.Where(x => !x.Finalizada);
+        }
+
         var model = new DistribuicaoIndexVm
         {
-            Productions = productions.Select(p => new DistribuicaoProductionVm(p.Id, p.Client.Name, p.PieceModel.Name, p.TotalQuantity,
-                p.Processes.Select(process => new DistribuicaoProcessVm(process.Id, process.ServiceProcess.Name, process.PricePerPiece,
-                    process.Assignments.Sum(x => x.PlannedQuantity), process.Assignments.Sum(x => x.ProducedQuantity), ProcessStatus(process, p.TotalQuantity),
-                    process.Assignments.Select(a => new AssignmentVm(a.Id, a.Seamstress.Name, a.PlannedQuantity, a.ProducedQuantity, a.PricePerPiece, a.TotalAmount, a.Status.ToString())).ToList())).ToList())).ToList()
+            Filtro = filtro,
+            Productions = productionViewModels
+                .Select(x => x.Production)
+                .ToList()
         };
+
         return View(model);
     }
+    private static bool IsProductionCompleted(Production production)
+    {
+        if (production.Processes.Count == 0)
+            return false;
 
+        foreach (var process in production.Processes)
+        {
+            var produced = process.Assignments
+                .Sum(x => x.ProducedQuantity);
+
+            if (produced < production.TotalQuantity)
+                return false;
+        }
+
+        return true;
+    }
     [HttpGet]
     public async Task<IActionResult> Create(int productionProcessId)
     {
@@ -40,22 +118,99 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(DistribuicaoCreateVm input)
     {
-        var process = await db.ProductionProcesses.Include(x => x.Production).FirstOrDefaultAsync(x => x.Id == input.ProductionProcessId);
-        if (process is null) return NotFound();
-        var assigned = await db.Assignments.Where(x => x.ProductionProcessId == process.Id).SumAsync(x => (int?)x.PlannedQuantity) ?? 0;
-        if (assigned + input.PlannedQuantity > process.Production.TotalQuantity)
-            ModelState.AddModelError(nameof(input.PlannedQuantity), $"Restam apenas {process.Production.TotalQuantity - assigned} peças para este processo.");
-        if (!await db.Seamstresses.AnyAsync(x => x.Id == input.SeamstressId && x.Active))
-            ModelState.AddModelError(nameof(input.SeamstressId), "Selecione uma costureira ativa.");
+        // Busca o processo de produção
+        var process = await db.ProductionProcesses
+            .Include(x => x.Production)
+            .FirstOrDefaultAsync(x => x.Id == input.ProductionProcessId);
+
+        if (process is null)
+            return NotFound();
+
+
+        // Quantidade que já foi distribuída para este processo
+        var quantidadeDistribuida = await db.Assignments
+            .Where(x => x.ProductionProcessId == process.Id)
+            .SumAsync(x => (int?)x.PlannedQuantity) ?? 0;
+
+
+        // Quantidade que ainda pode ser distribuída
+        var quantidadeRestante =
+            process.Production.TotalQuantity - quantidadeDistribuida;
+
+
+        // Validação da quantidade
+        if (input.PlannedQuantity <= 0)
+        {
+            ModelState.AddModelError(
+                nameof(input.PlannedQuantity),
+                "Informe uma quantidade maior que zero."
+            );
+        }
+
+        if (input.PlannedQuantity > quantidadeRestante)
+        {
+            ModelState.AddModelError(
+                nameof(input.PlannedQuantity),
+                $"Restam apenas {quantidadeRestante} peças para este processo."
+            );
+        }
+
+
+        // Verifica se a costureira existe e está ativa
+        var costureiraExiste = await db.Seamstresses
+            .AnyAsync(x =>
+                x.Id == input.SeamstressId &&
+                x.Active);
+
+        if (!costureiraExiste)
+        {
+            ModelState.AddModelError(
+                nameof(input.SeamstressId),
+                "Selecione uma costureira ativa."
+            );
+        }
+
+
+        // Se houver algum erro, retorna para o formulário
         if (!ModelState.IsValid)
         {
             input.PricePerPiece = process.PricePerPiece;
-            input.ProductionDescription = "Distribuição de processo";
-            input.Seamstresses = await ActiveSeamstressesAsync();
+
+            input.ProductionDescription =
+                $"{process.Production.PieceModel?.Name} · Distribuição";
+
+            input.Seamstresses =
+                await ActiveSeamstressesAsync();
+
             return View(input);
         }
-        db.Assignments.Add(new Assignment { ProductionProcessId = process.Id, SeamstressId = input.SeamstressId, PlannedQuantity = input.PlannedQuantity, PricePerPiece = process.PricePerPiece });
+
+
+        // Cria a distribuição
+        var assignment = new Assignment
+        {
+            ProductionProcessId = process.Id,
+            SeamstressId = input.SeamstressId,
+            PlannedQuantity = input.PlannedQuantity,
+            ProducedQuantity = 0,
+            PricePerPiece = process.PricePerPiece,
+            Status = AssignmentStatus.Pending
+        };
+
+
+        db.Assignments.Add(assignment);
+
+
+        // Salva no MySQL
         await db.SaveChangesAsync();
+
+
+        // Mensagem para aparecer na tela de distribuição
+        TempData["Success"] =
+            "Distribuição realizada com sucesso.";
+
+
+        // Volta para a tela de distribuição
         return RedirectToAction(nameof(Index));
     }
 

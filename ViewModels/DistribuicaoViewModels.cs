@@ -4,6 +4,8 @@ namespace CosturaProducao.ViewModels;
 
 public sealed class DistribuicaoIndexVm
 {
+    public string Filtro { get; init; } = "todos";
+
     public IReadOnlyList<DistribuicaoProductionVm> Productions { get; init; } = [];
 }
 

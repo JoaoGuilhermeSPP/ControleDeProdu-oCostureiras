@@ -13,5 +13,22 @@ body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity
 .filter-bar { display:flex; flex-wrap:wrap; align-items:end; gap:16px; padding:20px; margin-bottom:24px; border:1px solid var(--line); background:var(--surface); }.filter-bar label { display:grid; gap:7px; color:var(--muted); font-size:.8rem; }.filter-bar input,.filter-bar select { min-width:150px; padding:10px; border:1px solid var(--line); background:var(--canvas); color:var(--ink); font:inherit; }.report-metrics { margin-bottom:24px; }.report-table .table-row { grid-template-columns:1.6fr 1.5fr .8fr 1fr 1fr; }.summary-columns { display:grid; grid-template-columns:1fr 1fr; gap:16px; }.summary-card { padding:24px; border:1px solid var(--line); background:var(--surface); }.summary-card h2 { margin:0 0 20px; font:700 2rem 'Barlow Condensed',sans-serif; }.summary-card div { display:flex; justify-content:space-between; gap:14px; padding:13px 0; border-bottom:1px solid var(--line); }.summary-card span { color:var(--muted); text-align:right; }
 .summary-actions { margin-bottom:20px; }
 .registration-actions .btn {  padding: 4px 8px; font-size: 12px;}
+.distribution-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+    .distribution-filters a {
+        padding: 8px 14px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+        .distribution-filters a.active {
+            font-weight: 600;
+        }
 .inline-form { display:inline; }.assignment-line a { color:var(--primary); text-decoration:none; }.assignment-line a:hover { text-decoration:underline; }
 @media (max-width:760px) { .login-page { display:block; }.login-manifesto { display:none; }.metric-grid { grid-template-columns:1fr; }.page-heading { align-items:start; flex-direction:column; }.dashboard { padding-top:48px; }.site-header { padding:0 24px; } }
