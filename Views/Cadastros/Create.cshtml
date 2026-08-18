@@ -12,18 +12,19 @@
             <h1>Nova produção</h1>
         </div>
 
-        <a href="/Producoes" data-testid="production-cancel-link">
+        <a href="@Url.Action("Index", "Producoes")"
+           data-testid="production-cancel-link">
             Voltar
         </a>
     </div>
 
-
-    <form method="post"
+    <form asp-controller="Producoes"
+          asp-action="Create"
+          method="post"
           class="registration-form"
           data-testid="production-form">
 
         @Html.AntiForgeryToken()
-
 
         <div asp-validation-summary="ModelOnly"
              class="form-error"
@@ -31,10 +32,11 @@
         </div>
 
 
+        <!-- ========================= -->
         <!-- CLIENTE -->
+        <!-- ========================= -->
 
         <label asp-for="ClientId">
-
             Cliente
 
             <select asp-for="ClientId"
@@ -52,7 +54,6 @@
                 }
 
             </select>
-
         </label>
 
         <span asp-validation-for="ClientId"
@@ -60,10 +61,11 @@
         </span>
 
 
+        <!-- ========================= -->
         <!-- PEÇA -->
+        <!-- ========================= -->
 
         <label asp-for="PieceModelId">
-
             Peça
 
             <select asp-for="PieceModelId"
@@ -82,7 +84,6 @@
                 }
 
             </select>
-
         </label>
 
         <span asp-validation-for="PieceModelId"
@@ -90,10 +91,11 @@
         </span>
 
 
+        <!-- ========================= -->
         <!-- COR / TAMANHO -->
+        <!-- ========================= -->
 
         <label asp-for="PieceVariantId">
-
             Cor / Tamanho
 
             <select asp-for="PieceVariantId"
@@ -112,7 +114,6 @@
                 }
 
             </select>
-
         </label>
 
         <span asp-validation-for="PieceVariantId"
@@ -120,17 +121,17 @@
         </span>
 
 
+        <!-- ========================= -->
         <!-- QUANTIDADE -->
+        <!-- ========================= -->
 
         <label asp-for="TotalQuantity">
-
             Quantidade de peças
 
             <input asp-for="TotalQuantity"
                    type="number"
                    min="1"
                    data-testid="production-quantity-input" />
-
         </label>
 
         <span asp-validation-for="TotalQuantity"
@@ -138,16 +139,16 @@
         </span>
 
 
-        <!-- DATA DE PRODUÇÃO -->
+        <!-- ========================= -->
+        <!-- DATA PRODUÇÃO -->
+        <!-- ========================= -->
 
         <label asp-for="ProductionDate">
-
             Data de produção
 
             <input asp-for="ProductionDate"
                    type="date"
                    data-testid="production-date-input" />
-
         </label>
 
         <span asp-validation-for="ProductionDate"
@@ -155,16 +156,16 @@
         </span>
 
 
-        <!-- DATA DE ENTREGA -->
+        <!-- ========================= -->
+        <!-- DATA ENTREGA -->
+        <!-- ========================= -->
 
         <label asp-for="DeliveryDate">
-
             Data de entrega
 
             <input asp-for="DeliveryDate"
                    type="date"
                    data-testid="production-delivery-date-input" />
-
         </label>
 
         <span asp-validation-for="DeliveryDate"
@@ -172,7 +173,9 @@
         </span>
 
 
+        <!-- ========================= -->
         <!-- PROCESSOS -->
+        <!-- ========================= -->
 
         <div class="form-group">
 
@@ -182,27 +185,36 @@
 
             <div class="service-list">
 
-                @foreach (var service in Model.Services)
+                @if (Model.Services.Any())
                 {
-                    <label class="service-option">
+                    @foreach (var service in Model.Services)
+                    {
+                        <label class="service-option">
 
-                        <input type="checkbox"
-                               name="ServiceProcessIds"
-                               value="@service.Id"
-                               @(Model.ServiceProcessIds.Contains(service.Id)
-                                                          ? "checked"
-                                                          : "") />
+                            <input type="checkbox"
+                                   name="ServiceProcessIds"
+                                   value="@service.Id"
+                                   @(Model.ServiceProcessIds.Contains(service.Id)
+                                                              ? "checked"
+                                                              : "") />
 
                     <span>
                         @service.Name
                     </span>
 
-                        <small>
-                            R$ @service.Price.ToString("N2")
-                        </small>
+                            <small>
+                                R$ @service.Price.ToString("N2")
+                            </small>
 
-                    </label>
+                        </label>
                                 }
+                }
+                else
+                {
+                    <p>
+                        Nenhum processo ativo cadastrado.
+                    </p>
+                }
 
             </div>
 
@@ -213,24 +225,26 @@
         </span>
 
 
+        <!-- ========================= -->
         <!-- OBSERVAÇÕES -->
+        <!-- ========================= -->
 
         <label asp-for="Notes">
-
             Observações
 
             <textarea asp-for="Notes"
                       rows="4"
                       data-testid="production-notes-input"></textarea>
-
         </label>
 
 
+        <!-- ========================= -->
         <!-- BOTÕES -->
+        <!-- ========================= -->
 
         <div class="form-actions">
 
-            <a href="/Producoes"
+            <a href="@Url.Action("Index", "Producoes")"
                class="btn btn-secondary">
                 Cancelar
             </a>
@@ -238,9 +252,7 @@
             <button type="submit"
                     class="btn btn-primary"
                     data-testid="production-save-button">
-
                 Criar produção
-
             </button>
 
         </div>
@@ -250,91 +262,48 @@
 </section>
 
 
-<script>
+@section Scripts {
 
-    document.addEventListener("DOMContentLoaded", function () {
+    <partial name="_ValidationScriptsPartial" />
 
-        const pieceSelect =
-            document.getElementById("pieceModelSelect");
+    <script>
 
-        const variantSelect =
-            document.getElementById("pieceVariantSelect");
+        document.addEventListener("DOMContentLoaded", function () {
 
+            const pieceSelect =
+                document.getElementById("pieceModelSelect");
 
-        if (!pieceSelect || !variantSelect) {
-            return;
-        }
-
-
-        pieceSelect.addEventListener("change", async function () {
-
-            const pieceModelId = this.value;
+            const variantSelect =
+                document.getElementById("pieceVariantSelect");
 
 
-            // Limpa as opções atuais
-            variantSelect.innerHTML = "";
-
-
-            // Nenhuma peça selecionada
-            if (!pieceModelId || pieceModelId === "0") {
-
-                const option =
-                    document.createElement("option");
-
-                option.value = "0";
-                option.textContent =
-                    "Selecione primeiro uma peça";
-
-                variantSelect.appendChild(option);
-
+            if (!pieceSelect || !variantSelect) {
                 return;
             }
 
 
-            // Mensagem enquanto carrega
-            const loadingOption =
-                document.createElement("option");
+            pieceSelect.addEventListener("change", async function () {
 
-            loadingOption.value = "0";
-            loadingOption.textContent =
-                "Carregando cores e tamanhos...";
-
-            variantSelect.appendChild(loadingOption);
+                const pieceModelId = this.value;
 
 
-            try {
-
-                const response =
-                    await fetch(
-                        `/Producoes/Variantes?pieceModelId=${pieceModelId}`
-                    );
-
-
-                if (!response.ok) {
-                    throw new Error(
-                        "Não foi possível carregar as variações."
-                    );
-                }
-
-
-                const variants =
-                    await response.json();
-
-
-                // Limpa novamente
+                /*
+                 * Limpa as opções atuais
+                 */
                 variantSelect.innerHTML = "";
 
 
-                // Nenhuma variação cadastrada
-                if (variants.length === 0) {
+                /*
+                 * Nenhuma peça selecionada
+                 */
+                if (!pieceModelId || pieceModelId === "0") {
 
                     const option =
                         document.createElement("option");
 
                     option.value = "0";
-
                     option.textContent =
-                        "Esta peça não possui cor/tamanho cadastrado";
+                        "Selecione primeiro uma peça";
 
                     variantSelect.appendChild(option);
 
@@ -342,56 +311,137 @@
                 }
 
 
-                // Opção padrão
-                const defaultOption =
+                /*
+                 * Mostra carregamento
+                 */
+                const loadingOption =
                     document.createElement("option");
 
-                defaultOption.value = "0";
+                loadingOption.value = "0";
+                loadingOption.textContent =
+                    "Carregando cores e tamanhos...";
 
-                defaultOption.textContent =
-                    "Selecione uma cor e tamanho";
-
-                variantSelect.appendChild(defaultOption);
+                variantSelect.appendChild(loadingOption);
 
 
-                // Adiciona as variantes
-                variants.forEach(function (variant) {
+                try {
+
+                    const response = await fetch(
+                        '@Url.Action("Variantes", "Producoes")?pieceModelId='
+                        + encodeURIComponent(pieceModelId)
+                    );
+
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Não foi possível carregar as variações."
+                        );
+                    }
+
+
+                    const variants =
+                        await response.json();
+
+
+                    /*
+                     * Limpa novamente
+                     */
+                    variantSelect.innerHTML = "";
+
+
+                    /*
+                     * Nenhuma variante cadastrada
+                     */
+                    if (!variants || variants.length === 0) {
+
+                        const option =
+                            document.createElement("option");
+
+                        option.value = "0";
+
+                        option.textContent =
+                            "Esta peça não possui cor/tamanho cadastrado";
+
+                        variantSelect.appendChild(option);
+
+                        return;
+                    }
+
+
+                    /*
+                     * Opção padrão
+                     */
+                    const defaultOption =
+                        document.createElement("option");
+
+                    defaultOption.value = "0";
+
+                    defaultOption.textContent =
+                        "Selecione uma cor e tamanho";
+
+                    variantSelect.appendChild(defaultOption);
+
+
+                    /*
+                     * Adiciona as variantes
+                     */
+                    variants.forEach(function (variant) {
+
+                        const option =
+                            document.createElement("option");
+
+                        option.value = variant.id;
+
+                        option.textContent =
+                            `${variant.color} · ${variant.size}`;
+
+                        variantSelect.appendChild(option);
+
+                    });
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "Erro ao carregar variantes:",
+                        error
+                    );
+
+
+                    variantSelect.innerHTML = "";
+
 
                     const option =
                         document.createElement("option");
 
-                    option.value = variant.id;
+                    option.value = "0";
 
                     option.textContent =
-                        `${variant.color} · ${variant.size}`;
+                        "Erro ao carregar cores e tamanhos";
 
                     variantSelect.appendChild(option);
 
-                });
+                }
 
-            }
-            catch (error) {
-
-                console.error(error);
+            });
 
 
-                variantSelect.innerHTML = "";
+            /*
+             * Se a página for carregada já com uma peça selecionada
+             * (por exemplo, após erro de validação), carrega as variantes.
+             */
+            if (
+                pieceSelect.value &&
+                pieceSelect.value !== "0"
+            ) {
 
-
-                const option =
-                    document.createElement("option");
-
-                option.value = "0";
-
-                option.textContent =
-                    "Erro ao carregar cores e tamanhos";
-
-                variantSelect.appendChild(option);
+                pieceSelect.dispatchEvent(
+                    new Event("change")
+                );
 
             }
 
         });
 
-    });
-
-</script>
+    </script>
+}
