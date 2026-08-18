@@ -1,84 +1,397 @@
-@model CosturaProducao.ViewModels.CadastroInputVm
-@{ ViewData["Title"] = "Novo cadastro"; var isService = Model.Tipo == "servicos"; var isPiece = Model.Tipo == "pecas"; }
-<section class="dashboard" data-testid="registration-form-page">
-    <div class="page-heading"><div><p class="eyebrow">NOVO REGISTRO · @Model.Tipo.ToUpperInvariant()</p><h1>Adicionar</h1></div><a href="/Cadastros?tipo=@Model.Tipo" data-testid="registration-cancel-link">Voltar</a></div>
-    <form method="post" enctype="multipart/form-data" class="registration-form" data-testid="registration-form">
-        @Html.AntiForgeryToken()<input type="hidden" asp-for="Tipo" />
-        <div asp-validation-summary="ModelOnly" class="form-error" data-testid="registration-form-error"></div>
-        <label asp-for="Nome">Nome <input asp-for="Nome" autocomplete="off" data-testid="registration-name-input" /></label>
-        <span asp-validation-for="Nome" class="form-error"></span>
-        @if (isPiece)
-        {
-            <label asp-for="Codigo">
-                Código
-                <input asp-for="Codigo"
-                       data-testid="piece-code-input" />
+@model CosturaProducao.ViewModels.ProducaoCreateVm
+
+@{
+    ViewData["Title"] = "Nova produção";
+}
+
+<section class="dashboard" data-testid="production-form-page">
+
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">PRODUÇÃO · NOVO REGISTRO</p>
+            <h1>Nova produção</h1>
+        </div>
+
+        <a href="/Producoes" data-testid="production-cancel-link">
+            Voltar
+        </a>
+    </div>
+
+
+    <form method="post"
+          class="registration-form"
+          data-testid="production-form">
+
+        @Html.AntiForgeryToken()
+
+
+        <div asp-validation-summary="ModelOnly"
+             class="form-error"
+             data-testid="production-form-error">
+        </div>
+
+
+        <!-- CLIENTE -->
+
+        <label asp-for="ClientId">
+
+            Cliente
+
+            <select asp-for="ClientId"
+                    data-testid="production-client-select">
+
+                <option value="0">
+                    Selecione o cliente
+                </option>
+
+                @foreach (var client in Model.Clients)
+                {
+                    <option value="@client.Id">
+                        @client.Name
+                    </option>
+                }
+
+            </select>
+
+        </label>
+
+        <span asp-validation-for="ClientId"
+              class="form-error">
+        </span>
+
+
+        <!-- PEÇA -->
+
+        <label asp-for="PieceModelId">
+
+            Peça
+
+            <select asp-for="PieceModelId"
+                    id="pieceModelSelect"
+                    data-testid="production-piece-select">
+
+                <option value="0">
+                    Selecione a peça
+                </option>
+
+                @foreach (var piece in Model.Pieces)
+                {
+                    <option value="@piece.Id">
+                        @piece.Name
+                    </option>
+                }
+
+            </select>
+
+        </label>
+
+        <span asp-validation-for="PieceModelId"
+              class="form-error">
+        </span>
+
+
+        <!-- COR / TAMANHO -->
+
+        <label asp-for="PieceVariantId">
+
+            Cor / Tamanho
+
+            <select asp-for="PieceVariantId"
+                    id="pieceVariantSelect"
+                    data-testid="production-variant-select">
+
+                <option value="0">
+                    Selecione primeiro uma peça
+                </option>
+
+                @foreach (var variant in Model.Variants)
+                {
+                    <option value="@variant.Id">
+                        @variant.Cor · @variant.Tamanho
+                    </option>
+                }
+
+            </select>
+
+        </label>
+
+        <span asp-validation-for="PieceVariantId"
+              class="form-error">
+        </span>
+
+
+        <!-- QUANTIDADE -->
+
+        <label asp-for="TotalQuantity">
+
+            Quantidade de peças
+
+            <input asp-for="TotalQuantity"
+                   type="number"
+                   min="1"
+                   data-testid="production-quantity-input" />
+
+        </label>
+
+        <span asp-validation-for="TotalQuantity"
+              class="form-error">
+        </span>
+
+
+        <!-- DATA DE PRODUÇÃO -->
+
+        <label asp-for="ProductionDate">
+
+            Data de produção
+
+            <input asp-for="ProductionDate"
+                   type="date"
+                   data-testid="production-date-input" />
+
+        </label>
+
+        <span asp-validation-for="ProductionDate"
+              class="form-error">
+        </span>
+
+
+        <!-- DATA DE ENTREGA -->
+
+        <label asp-for="DeliveryDate">
+
+            Data de entrega
+
+            <input asp-for="DeliveryDate"
+                   type="date"
+                   data-testid="production-delivery-date-input" />
+
+        </label>
+
+        <span asp-validation-for="DeliveryDate"
+              class="form-error">
+        </span>
+
+
+        <!-- PROCESSOS -->
+
+        <div class="form-group">
+
+            <label>
+                Processos de produção
             </label>
 
-            <label asp-for="Cor">
-                Cor
-                <input asp-for="Cor"
-                       data-testid="piece-color-input" />
-            </label>
-        }
+            <div class="service-list">
 
-        @if (!isService && !isPiece)
-        {
-            <label asp-for="Telefone">
-                Telefone
-                <input asp-for="Telefone"
-                       data-testid="registration-phone-input" />
-            </label>
+                @foreach (var service in Model.Services)
+                {
+                    <label class="service-option">
 
-            <label asp-for="Endereco">
-                Endereço
-                <input asp-for="Endereco"
-                       data-testid="registration-address-input" />
-            </label>
-        }
+                        <input type="checkbox"
+                               name="ServiceProcessIds"
+                               value="@service.Id"
+                               @(Model.ServiceProcessIds.Contains(service.Id)
+                                                          ? "checked"
+                                                          : "") />
 
-        @if (isService && !isPiece)
-        {
-            <label asp-for="ValorPorPeca">
-                Valor por peça
-                <input asp-for="ValorPorPeca"
-                       type="number"
-                       min="0"
-                       step="0.01"
-                       data-testid="service-price-input" />
-            </label>
-        }
+                    <span>
+                        @service.Name
+                    </span>
 
-        @if (isPiece || isService)
-        {
-            <label asp-for="Descricao">
-                Descrição
+                        <small>
+                            R$ @service.Price.ToString("N2")
+                        </small>
 
-                <textarea asp-for="Descricao"
-                          data-testid="registration-description-input"></textarea>
-            </label>
-        }
+                    </label>
+                                }
 
-        @if (isPiece)
-        {
-            <label asp-for="Gabarito">
-                Imagem do gabarito
-                <input asp-for="Gabarito"
-                       type="file"
-                       accept="image/png,image/jpeg,image/webp"
-                       data-testid="piece-template-input" />
-            </label>
-        }
+            </div>
 
-        @if (!isService && !isPiece)
-        {
-            <label asp-for="Observacoes">
-                Observações
+        </div>
 
-                <textarea asp-for="Observacoes"
-                          data-testid="registration-notes-input"></textarea>
-            </label>
-        }
-         <button class="btn btn-primary" type="submit" data-testid="registration-save-button">Salvar cadastro</button>
+        <span asp-validation-for="ServiceProcessIds"
+              class="form-error">
+        </span>
+
+
+        <!-- OBSERVAÇÕES -->
+
+        <label asp-for="Notes">
+
+            Observações
+
+            <textarea asp-for="Notes"
+                      rows="4"
+                      data-testid="production-notes-input"></textarea>
+
+        </label>
+
+
+        <!-- BOTÕES -->
+
+        <div class="form-actions">
+
+            <a href="/Producoes"
+               class="btn btn-secondary">
+                Cancelar
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary"
+                    data-testid="production-save-button">
+
+                Criar produção
+
+            </button>
+
+        </div>
+
     </form>
+
 </section>
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const pieceSelect =
+            document.getElementById("pieceModelSelect");
+
+        const variantSelect =
+            document.getElementById("pieceVariantSelect");
+
+
+        if (!pieceSelect || !variantSelect) {
+            return;
+        }
+
+
+        pieceSelect.addEventListener("change", async function () {
+
+            const pieceModelId = this.value;
+
+
+            // Limpa as opções atuais
+            variantSelect.innerHTML = "";
+
+
+            // Nenhuma peça selecionada
+            if (!pieceModelId || pieceModelId === "0") {
+
+                const option =
+                    document.createElement("option");
+
+                option.value = "0";
+                option.textContent =
+                    "Selecione primeiro uma peça";
+
+                variantSelect.appendChild(option);
+
+                return;
+            }
+
+
+            // Mensagem enquanto carrega
+            const loadingOption =
+                document.createElement("option");
+
+            loadingOption.value = "0";
+            loadingOption.textContent =
+                "Carregando cores e tamanhos...";
+
+            variantSelect.appendChild(loadingOption);
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/Producoes/Variantes?pieceModelId=${pieceModelId}`
+                    );
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Não foi possível carregar as variações."
+                    );
+                }
+
+
+                const variants =
+                    await response.json();
+
+
+                // Limpa novamente
+                variantSelect.innerHTML = "";
+
+
+                // Nenhuma variação cadastrada
+                if (variants.length === 0) {
+
+                    const option =
+                        document.createElement("option");
+
+                    option.value = "0";
+
+                    option.textContent =
+                        "Esta peça não possui cor/tamanho cadastrado";
+
+                    variantSelect.appendChild(option);
+
+                    return;
+                }
+
+
+                // Opção padrão
+                const defaultOption =
+                    document.createElement("option");
+
+                defaultOption.value = "0";
+
+                defaultOption.textContent =
+                    "Selecione uma cor e tamanho";
+
+                variantSelect.appendChild(defaultOption);
+
+
+                // Adiciona as variantes
+                variants.forEach(function (variant) {
+
+                    const option =
+                        document.createElement("option");
+
+                    option.value = variant.id;
+
+                    option.textContent =
+                        `${variant.color} · ${variant.size}`;
+
+                    variantSelect.appendChild(option);
+
+                });
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+
+                variantSelect.innerHTML = "";
+
+
+                const option =
+                    document.createElement("option");
+
+                option.value = "0";
+
+                option.textContent =
+                    "Erro ao carregar cores e tamanhos";
+
+                variantSelect.appendChild(option);
+
+            }
+
+        });
+
+    });
+
+</script>

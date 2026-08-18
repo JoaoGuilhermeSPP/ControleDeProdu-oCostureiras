@@ -7,7 +7,7 @@
         <div asp-validation-summary="ModelOnly" class="form-error" data-testid="production-form-error"></div>
         <label asp-for="ClientId">Cliente <select asp-for="ClientId" data-testid="production-client-select"><option value="">Selecione</option>@foreach (var item in Model.Clients) { <option value="@item.Id">@item.Name</option> }</select></label>
         <label asp-for="PieceModelId">Modelo da peça <select asp-for="PieceModelId" data-testid="production-piece-select"><option value="">Selecione</option>@foreach (var item in Model.Pieces) { <option value="@item.Id">@item.Name</option> }</select></label>
-        <label asp-for="Color">Cor <input asp-for="Color" data-testid="production-color-input" /></label>
+        <label asp-for="Variants">Cor <input asp-for="Variants" data-testid="production-color-input" /></label>
         <label asp-for="TotalQuantity">Quantidade total <input asp-for="TotalQuantity" type="number" min="1" data-testid="production-quantity-input" /></label>
         <div class="date-grid"><label asp-for="ProductionDate">Data da produção <input asp-for="ProductionDate" type="date" data-testid="production-date-input" /></label><label asp-for="DeliveryDate">Data de entrega <input asp-for="DeliveryDate" type="date" data-testid="production-delivery-date-input" /></label></div>
         <fieldset class="process-options"><legend>Processos desta produção</legend>@foreach (var service in Model.Services) { <label class="check-line"><input type="checkbox" name="ServiceProcessIds" value="@service.Id" @(Model.ServiceProcessIds.Contains(service.Id) ? "checked" : "") data-testid="production-service-@service.Id" /><span>@service.Name</span><small>R$ @service.Price.ToString("N2") por peça</small></label> }</fieldset>

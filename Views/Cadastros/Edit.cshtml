@@ -24,6 +24,7 @@
         </a>
     </div>
 
+
     <form asp-controller="Cadastros"
           asp-action="Edit"
           method="post"
@@ -33,16 +34,20 @@
 
         @Html.AntiForgeryToken()
 
-        <!-- Identificação do registro -->
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="Tipo" />
+
+
+        <!-- ERROS -->
 
         <div asp-validation-summary="ModelOnly"
              class="form-error"
              data-testid="registration-form-error">
         </div>
 
-        <!-- Nome -->
+
+        <!-- NOME -->
+
         <label asp-for="Nome">
             Nome
 
@@ -56,9 +61,13 @@
         </span>
 
 
-        <!-- Campos específicos de Peças -->
+        <!-- ================================================= -->
+        <!-- PEÇA -->
+        <!-- ================================================= -->
         @if (isPiece)
         {
+            <!-- CÓDIGO -->
+
             <label asp-for="Codigo">
                 Código
 
@@ -66,65 +75,89 @@
                        data-testid="piece-code-input" />
             </label>
 
-            <label asp-for="Cor">
-                Cor
-
-                <input asp-for="Cor"
-                       data-testid="piece-color-input" />
-            </label>
-        }
+            <span asp-validation-for="Codigo"
+                  class="form-error">
+            </span>
 
 
-        <!-- Telefone e endereço -->
-        @if (!isService && !isPiece)
-        {
-            <label asp-for="Telefone">
-                Telefone
+            <!-- ============================================= -->
+            <!-- CORES E TAMANHOS -->
+            <!-- ============================================= -->
 
-                <input asp-for="Telefone"
-                       data-testid="registration-phone-input" />
-            </label>
+            <div class="variants-section">
 
-            <label asp-for="Endereco">
-                Endereço
+                <h3>Cores e tamanhos</h3>
 
-                <input asp-for="Endereco"
-                       data-testid="registration-address-input" />
-            </label>
-        }
+                <p>
+                    Cadastre as combinações de cor e tamanho
+                    disponíveis para esta peça.
+                </p>
 
 
-        <!-- Serviço -->
-        @if (isService)
-        {
-            <label asp-for="ValorPorPeca">
-                Valor por peça
+                <div id="variants-container">
 
-                <input asp-for="ValorPorPeca"
-                       type="number"
-                       min="0"
-                       step="0.01"
-                       data-testid="service-price-input" />
-            </label>
-        }
+                    @for (int i = 0; i < Model.Variants.Count; i++)
+                    {
+                        <div class="variant-row">
+
+                            <input type="hidden"
+                                   asp-for="Variants[i].Id" />
 
 
-        <!-- Descrição -->
-        @if (isPiece || isService)
-        {
-            <label asp-for="Descricao">
-                Descrição
+                            <div class="variant-field">
 
-                <textarea asp-for="Descricao"
-                          data-testid="registration-description-input">
-                    </textarea>
-            </label>
-        }
+                                <label>
+                                    Cor
+                                </label>
+
+                                <input asp-for="Variants[i].Cor"
+                                       placeholder="Ex.: Azul"
+                                       class="form-control" />
+
+                            </div>
 
 
-        <!-- Gabarito da peça -->
-        @if (isPiece)
-        {
+                            <div class="variant-field">
+
+                                <label>
+                                    Tamanho
+                                </label>
+
+                                <input asp-for="Variants[i].Tamanho"
+                                       placeholder="Ex.: M"
+                                       class="form-control" />
+
+                            </div>
+
+
+                            <button type="button"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="removerVariante(this)">
+                                Remover
+                            </button>
+
+                        </div>
+                    }
+
+                </div>
+
+
+                <!-- ADICIONAR -->
+
+                <button type="button"
+                        class="btn btn-secondary btn-sm"
+                        onclick="adicionarVariante()">
+
+                    + Adicionar cor/tamanho
+
+                </button>
+
+            </div>
+
+
+            <!-- ============================================= -->
+            <!-- GABARITO -->
+            <!-- ============================================= -->
             @if (!string.IsNullOrWhiteSpace(Model.GabaritoAtual))
             {
                 <div class="current-template">
@@ -135,18 +168,21 @@
 
                     <img src="@Model.GabaritoAtual"
                          alt="Gabarito atual"
-                         style="max-width: 300px; max-height: 300px;" />
+                         style="max-width:300px; max-height:300px;" />
 
                 </div>
             }
 
+
             <label asp-for="Gabarito">
+
                 Alterar imagem do gabarito
 
                 <input asp-for="Gabarito"
                        type="file"
                        accept="image/png,image/jpeg,image/webp"
                        data-testid="piece-template-input" />
+
             </label>
 
             <small>
@@ -155,30 +191,109 @@
         }
 
 
-        <!-- Observações -->
+        <!-- ================================================= -->
+        <!-- COSTUREIRA / CLIENTE -->
+        <!-- ================================================= -->
         @if (!isService && !isPiece)
         {
-            <label asp-for="Observacoes">
-                Observações
+            <label asp-for="Telefone">
 
-                <textarea asp-for="Observacoes"
-                          data-testid="registration-notes-input">
-                    </textarea>
+                Telefone
+
+                <input asp-for="Telefone"
+                       data-testid="registration-phone-input" />
+
+            </label>
+
+
+            <label asp-for="Endereco">
+
+                Endereço
+
+                <input asp-for="Endereco"
+                       data-testid="registration-address-input" />
+
             </label>
         }
 
+
+        <!-- ================================================= -->
+        <!-- SERVIÇO -->
+        <!-- ================================================= -->
+        @if (isService)
+        {
+            <label asp-for="ValorPorPeca">
+
+                Valor por peça
+
+                <input asp-for="ValorPorPeca"
+                       type="number"
+                       min="0"
+                       step="0.01"
+                       data-testid="service-price-input" />
+
+            </label>
+
+            <span asp-validation-for="ValorPorPeca"
+                  class="form-error">
+            </span>
+        }
+
+
+        <!-- ================================================= -->
+        <!-- DESCRIÇÃO -->
+        <!-- ================================================= -->
+        @if (isPiece || isService)
+        {
+            <label asp-for="Descricao">
+
+                Descrição
+
+                <textarea asp-for="Descricao"
+                          rows="4"
+                          data-testid="registration-description-input"></textarea>
+
+            </label>
+        }
+
+
+        <!-- ================================================= -->
+        <!-- OBSERVAÇÕES -->
+        <!-- ================================================= -->
+        @if (!isService && !isPiece)
+        {
+            <label asp-for="Observacoes">
+
+                Observações
+
+                <textarea asp-for="Observacoes"
+                          rows="4"
+                          data-testid="registration-notes-input"></textarea>
+
+            </label>
+        }
+
+
+        <!-- ================================================= -->
+        <!-- BOTÕES -->
+        <!-- ================================================= -->
 
         <div class="form-actions">
 
             <a href="/Cadastros?tipo=@Model.Tipo"
                class="btn btn-secondary">
+
                 Cancelar
+
             </a>
+
 
             <button class="btn btn-primary"
                     type="submit"
                     data-testid="registration-save-button">
+
                 Salvar alterações
+
             </button>
 
         </div>
@@ -186,3 +301,91 @@
     </form>
 
 </section>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT DAS VARIANTES -->
+<!-- ========================================================= -->
+@if (isPiece)
+{
+    <script>
+
+        let variantIndex =
+            @Model.Variants.Count;
+
+
+        function adicionarVariante()
+        {
+            const container =
+                document.getElementById("variants-container");
+
+
+            const row =
+                document.createElement("div");
+
+            row.className =
+                "variant-row";
+
+
+            row.innerHTML = `
+
+                <div class="variant-field">
+
+                    <label>
+                        Cor
+                    </label>
+
+                    <input
+                        name="Variants[${variantIndex}].Cor"
+                        class="form-control"
+                        placeholder="Ex.: Azul" />
+
+                </div>
+
+
+                <div class="variant-field">
+
+                    <label>
+                        Tamanho
+                    </label>
+
+                    <input
+                        name="Variants[${variantIndex}].Tamanho"
+                        class="form-control"
+                        placeholder="Ex.: M" />
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    onclick="removerVariante(this)">
+
+                    Remover
+
+                </button>
+
+            `;
+
+
+            container.appendChild(row);
+
+            variantIndex++;
+        }
+
+
+        function removerVariante(button)
+        {
+            const row =
+                button.closest(".variant-row");
+
+
+            if (row)
+            {
+                row.remove();
+            }
+        }
+
+    </script>
+}

@@ -16,15 +16,71 @@ public sealed class CadastrosController(ApplicationDbContext db, IWebHostEnviron
         if (!Tipos.Contains(tipo)) return NotFound();
         var itens = tipo switch
         {
-            "costureiras" => await db.Seamstresses.AsNoTracking().OrderBy(x => x.Name).Select(x => new CadastroRowVm(x.Id, x.Name, null, x.Phone, x.Active)).ToListAsync(),
-            "clientes" => await db.Clients.AsNoTracking().OrderBy(x => x.Name).Select(x => new CadastroRowVm(x.Id, x.Name, null, x.Phone, x.Active)).ToListAsync(),
-            "servicos" => await db.ServiceProcesses.AsNoTracking().OrderBy(x => x.Name).Select(x => new CadastroRowVm(x.Id, x.Name, null, $"R$ {x.DefaultPricePerPiece:N2}", x.Active)).ToListAsync(),
-            _ => await db.PieceModels.AsNoTracking().OrderBy(x => x.Name).Select(x => new CadastroRowVm(x.Id, x.Name, x.Code, x.Color, x.Active)).ToListAsync()
+            "costureiras" =>
+                await db.Seamstresses
+                    .AsNoTracking()
+                    .OrderBy(x => x.Name)
+                    .Select(x => new CadastroRowVm(
+                        x.Id,
+                        x.Name,
+                        null,
+                        x.Phone,
+                        x.Active))
+                    .ToListAsync(),
+
+            "clientes" =>
+                await db.Clients
+                    .AsNoTracking()
+                    .OrderBy(x => x.Name)
+                    .Select(x => new CadastroRowVm(
+                        x.Id,
+                        x.Name,
+                        null,
+                        x.Phone,
+                        x.Active))
+                    .ToListAsync(),
+
+            "servicos" =>
+                await db.ServiceProcesses
+                    .AsNoTracking()
+                    .OrderBy(x => x.Name)
+                    .Select(x => new CadastroRowVm(
+                        x.Id,
+                        x.Name,
+                        null,
+                        $"R$ {x.DefaultPricePerPiece:N2}",
+                        x.Active))
+                    .ToListAsync(),
+
+            "pecas" =>
+                await db.PieceModels
+                    .AsNoTracking()
+                    .Include(x => x.Variants)
+                    .OrderBy(x => x.Name)
+                    .Select(x => new CadastroRowVm(
+                        x.Id,
+                        x.Name,
+                        x.Code,
+                        x.Variants
+                            .OrderBy(v => v.Cor)
+                            .ThenBy(v => v.Tamanho)
+                            .Select(v => $"{v.Cor} / {v.Tamanho}")
+                            .FirstOrDefault(),
+                        x.Active))
+                    .ToListAsync(),
+
+            _ => throw new ArgumentException("Tipo de cadastro inválido.")
         };
-        return View(new CadastroIndexVm { Tipo = tipo, Titulo = Titulo(tipo), Itens = itens });
+
+        return View(new CadastroIndexVm
+        {
+            Tipo = tipo,
+            Titulo = Titulo(tipo),
+            Itens = itens
+        });
     }
 
-    [HttpGet]
+        [HttpGet]
     public IActionResult Create(string tipo) => Tipos.Contains(tipo) ? View(new CadastroInputVm { Tipo = tipo }) : NotFound();
 
     [HttpPost]
@@ -56,8 +112,35 @@ public sealed class CadastrosController(ApplicationDbContext db, IWebHostEnviron
                 case "clientes": db.Clients.Add(new Client { Name = input.Nome.Trim(), Phone = input.Telefone, Address = input.Endereco, Notes = input.Observacoes }); break;
                 case "servicos": db.ServiceProcesses.Add(new ServiceProcess { Name = input.Nome.Trim(), Description = input.Descricao, DefaultPricePerPiece = input.ValorPorPeca ?? 0 }); break;
                 case "pecas":
-                    savedTemplatePath = await SaveTemplateAsync(input.Gabarito);
-                    db.PieceModels.Add(new PieceModel { Name = input.Nome.Trim(), Code = input.Codigo!.Trim(), Color = input.Cor, Description = input.Descricao, TemplateImagePath = savedTemplatePath });
+                    {
+                        savedTemplatePath =
+                            await SaveTemplateAsync(input.Gabarito);
+
+                        var piece = new PieceModel
+                        {
+                            Name = input.Nome.Trim(),
+                            Code = input.Codigo!.Trim(),
+                            Description = input.Descricao,
+                            TemplateImagePath = savedTemplatePath
+                        };
+
+                        foreach (var variant in input.Variants)
+                        {
+                            if (string.IsNullOrWhiteSpace(variant.Cor) ||
+                                string.IsNullOrWhiteSpace(variant.Tamanho))
+                                continue;
+
+                            piece.Variants.Add(new PieceVariant
+                            {
+                                Cor = variant.Cor.Trim(),
+                                Tamanho = variant.Tamanho.Trim()
+                            });
+                        }
+
+                        db.PieceModels.Add(piece);
+
+                        break;
+                    }
                     break;
             }
             await db.SaveChangesAsync();
@@ -126,20 +209,29 @@ public sealed class CadastrosController(ApplicationDbContext db, IWebHostEnviron
                 .FirstOrDefaultAsync(),
 
             "pecas" => await db.PieceModels
-                .AsNoTracking()
-                .Where(x => x.Id == id)
-                .Select(x => new CadastroInputVm
-                {
-                    Id = x.Id,
-                    Tipo = tipo,
-                    Nome = x.Name,
-                    Codigo = x.Code,
-                    Cor = x.Color,
-                    Descricao = x.Description,
-                    GabaritoAtual = x.TemplateImagePath
-                })
-                .FirstOrDefaultAsync(),
+       .AsNoTracking()
+       .Include(x => x.Variants)
+       .Where(x => x.Id == id)
+       .Select(x => new CadastroInputVm
+       {
+           Id = x.Id,
+           Tipo = tipo,
+           Nome = x.Name,
+           Codigo = x.Code,
+           Descricao = x.Description,
+           GabaritoAtual = x.TemplateImagePath,
 
+           Variants = x.Variants
+               .OrderBy(v => v.Cor)
+               .ThenBy(v => v.Tamanho)
+               .Select(v => new PieceVariantInputVm
+               {
+                   Cor = v.Cor,
+                   Tamanho = v.Tamanho
+               })
+               .ToList()
+       })
+       .FirstOrDefaultAsync(),
             _ => null
         };
 
@@ -242,23 +334,43 @@ public sealed class CadastrosController(ApplicationDbContext db, IWebHostEnviron
 
             case "pecas":
                 {
-                    var peca = await db.PieceModels.FindAsync(input.Id);
+                    var peca = await db.PieceModels
+                        .Include(x => x.Variants)
+                        .FirstOrDefaultAsync(x => x.Id == input.Id);
 
                     if (peca is null)
                         return NotFound();
 
                     peca.Name = input.Nome.Trim();
                     peca.Code = input.Codigo!.Trim();
-                    peca.Color = input.Cor;
                     peca.Description = input.Descricao;
 
-                    // Se foi enviado um novo gabarito
+                    // Remove as variações antigas
+                    db.PieceVariants.RemoveRange(peca.Variants);
+
+                    // Adiciona as novas variações
+                    foreach (var variant in input.Variants)
+                    {
+                        if (string.IsNullOrWhiteSpace(variant.Cor) ||
+                            string.IsNullOrWhiteSpace(variant.Tamanho))
+                            continue;
+
+                        peca.Variants.Add(new PieceVariant
+                        {
+                            PieceModelId = peca.Id,
+                            Cor = variant.Cor.Trim(),
+                            Tamanho = variant.Tamanho.Trim()
+                        });
+                    }
+
+                    // Novo gabarito
                     if (input.Gabarito is not null &&
                         input.Gabarito.Length > 0)
                     {
                         var oldTemplate = peca.TemplateImagePath;
 
-                        var newTemplate = await SaveTemplateAsync(input.Gabarito);
+                        var newTemplate =
+                            await SaveTemplateAsync(input.Gabarito);
 
                         peca.TemplateImagePath = newTemplate;
 

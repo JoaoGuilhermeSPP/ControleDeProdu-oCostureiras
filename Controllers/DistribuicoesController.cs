@@ -12,6 +12,7 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
     [HttpGet]
     public async Task<IActionResult> Index(string filtro = "todos")
     {
+        // Valida o filtro
         if (filtro != "todos" &&
             filtro != "andamento" &&
             filtro != "finalizadas")
@@ -19,10 +20,12 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
             filtro = "todos";
         }
 
+        // Busca as produções no banco
         var productions = await db.Productions
             .AsNoTracking()
             .Include(x => x.Client)
             .Include(x => x.PieceModel)
+            .Include(x => x.PieceVariant)
             .Include(x => x.Processes)
                 .ThenInclude(x => x.ServiceProcess)
             .Include(x => x.Processes)
@@ -31,6 +34,8 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
             .OrderBy(x => x.DeliveryDate)
             .ToListAsync();
 
+
+        // Monta o ViewModel
         var productionViewModels = productions
             .Select(p =>
             {
@@ -40,9 +45,21 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
                             process.Id,
                             process.ServiceProcess.Name,
                             process.PricePerPiece,
-                            process.Assignments.Sum(x => x.PlannedQuantity),
-                            process.Assignments.Sum(x => x.ProducedQuantity),
-                            ProcessStatus(process, p.TotalQuantity),
+
+                            // Quantidade planejada
+                            process.Assignments
+                                .Sum(x => x.PlannedQuantity),
+
+                            // Quantidade produzida
+                            process.Assignments
+                                .Sum(x => x.ProducedQuantity),
+
+                            // Status do processo
+                            ProcessStatus(
+                                process,
+                                p.TotalQuantity),
+
+                            // Distribuições
                             process.Assignments
                                 .Select(a =>
                                     new AssignmentVm(
@@ -53,8 +70,10 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
                                         a.PricePerPiece,
                                         a.TotalAmount,
                                         a.Status.ToString()))
-                                .ToList()))
+                                .ToList()
+                        ))
                     .ToList();
+
 
                 return new
                 {
@@ -62,47 +81,79 @@ public sealed class DistribuicoesController(ApplicationDbContext db) : Controlle
                         p.Id,
                         p.Client.Name,
                         p.PieceModel.Name,
-                        p.TotalQuantity,
-                        processes),
 
+                        // NOVO: cor da variação
+                        p.PieceVariant.Cor,
+
+                        // NOVO: tamanho da variação
+                        p.PieceVariant.Tamanho,
+
+                        p.TotalQuantity,
+                        processes
+                    ),
+
+                    // Verifica se toda a produção foi concluída
                     Finalizada = IsProductionCompleted(p)
                 };
-            });
+            })
+            .ToList();
 
+
+        // Filtro: somente finalizadas
         if (filtro == "finalizadas")
         {
-            productionViewModels =
-                productionViewModels.Where(x => x.Finalizada);
-        }
-        else if (filtro == "andamento")
-        {
-            productionViewModels =
-                productionViewModels.Where(x => !x.Finalizada);
+            productionViewModels = productionViewModels
+                .Where(x => x.Finalizada)
+                .ToList();
         }
 
+        // Filtro: somente em andamento
+        else if (filtro == "andamento")
+        {
+            productionViewModels = productionViewModels
+                .Where(x => !x.Finalizada)
+                .ToList();
+        }
+
+
+        // ViewModel final
         var model = new DistribuicaoIndexVm
         {
             Filtro = filtro,
+
             Productions = productionViewModels
                 .Select(x => x.Production)
                 .ToList()
         };
 
+
         return View(model);
     }
+
+
+    /// <summary>
+    /// Verifica se todos os processos da produção
+    /// já atingiram a quantidade total produzida.
+    /// </summary>
     private static bool IsProductionCompleted(Production production)
     {
+        // Produção sem processos nunca pode ser considerada finalizada
         if (production.Processes.Count == 0)
             return false;
+
 
         foreach (var process in production.Processes)
         {
             var produced = process.Assignments
                 .Sum(x => x.ProducedQuantity);
 
+
+            // Se algum processo ainda não atingiu
+            // a quantidade total, a produção continua aberta
             if (produced < production.TotalQuantity)
                 return false;
         }
+
 
         return true;
     }

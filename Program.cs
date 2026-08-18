@@ -1,62 +1,79 @@
 using CosturaProducao.Data;
 using CosturaProducao.Reports;
 using CosturaProducao.Services;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // ESSENCIAL para UseSqlite
 using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 QuestPDF.Settings.License = LicenseType.Community;
 
-// Banco de dados
+// =====================================================
+// BANCO DE DADOS SQLITE
+// =====================================================
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException(
-        "A configuração ConnectionStrings:DefaultConnection não foi encontrada."
-    );
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        connectionString,
-        ServerVersion.AutoDetect(connectionString)
-    )
-);
+    options.UseSqlite(connectionString));
 
+// =====================================================
 // MVC
+// =====================================================
+
 builder.Services.AddControllersWithViews();
 
-// Serviços
+// =====================================================
+// SERVIÇOS
+// =====================================================
+
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<BackupService>();
 
 var app = builder.Build();
 
-// Tratamento de erros
+// =====================================================
+// TRATAMENTO DE ERROS
+// =====================================================
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
 }
 
-// Arquivos estáticos
+// =====================================================
+// ARQUIVOS ESTÁTICOS
+// =====================================================
+
 app.UseStaticFiles();
 
-// Roteamento
+// =====================================================
+// ROTEAMENTO
+// =====================================================
+
 app.UseRouting();
 
-// Rota principal
+// =====================================================
+// ROTA PRINCIPAL
+// =====================================================
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
-// Inicialização dos dados
+// =====================================================
+// BANCO / SEED
+// =====================================================
+
 await SeedData.InitializeAsync(
     app.Services,
     app.Configuration
 );
 
-// Inicia aplicação
+// =====================================================
+// INICIA APLICAÇÃO
+// =====================================================
+
 await app.RunAsync();
 
 public partial class Program { }

@@ -43,16 +43,36 @@ public sealed class ServiceProcess : AuditableEntity
 public sealed class PieceModel : AuditableEntity
 {
     public string Name { get; set; } = string.Empty;
+
     public string Code { get; set; } = string.Empty;
-    public string? Color { get; set; }
+
     public string? Description { get; set; }
+
     public string? TemplateImagePath { get; set; }
-    public ICollection<PieceService> PieceServices { get; set; } = new List<PieceService>();
-    public ICollection<Production> Productions { get; set; } = new List<Production>();
+
+    public ICollection<PieceVariant> Variants { get; set; }
+        = new List<PieceVariant>();
+
+    public ICollection<PieceService> PieceServices { get; set; }
+        = new List<PieceService>();
+
+    public ICollection<Production> Productions { get; set; }
+        = new List<Production>();
+    public ICollection<PieceSize> PieceSizes { get; set; } = new List<PieceSize>();
+}
+public sealed class PieceSize
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+
+    public int PieceModelId { get; set; }
+    public PieceModel PieceModel { get; set; } = null!;
 }
 
 public sealed class PieceService
 {
+
+    public int Id { get; set; }
     public int PieceModelId { get; set; }
     public PieceModel PieceModel { get; set; } = null!;
     public int ServiceProcessId { get; set; }

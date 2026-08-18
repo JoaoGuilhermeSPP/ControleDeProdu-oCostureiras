@@ -9,7 +9,15 @@ public sealed class DistribuicaoIndexVm
     public IReadOnlyList<DistribuicaoProductionVm> Productions { get; init; } = [];
 }
 
-public sealed record DistribuicaoProductionVm(int Id, string Client, string Piece, int Quantity, IReadOnlyList<DistribuicaoProcessVm> Processes);
+public sealed record DistribuicaoProductionVm(
+    int Id,
+    string Client,
+    string Piece,
+    string Color,
+    string Size,
+    int Quantity,
+    List<DistribuicaoProcessVm> Processes
+);
 public sealed record DistribuicaoProcessVm(int Id, string Name, decimal Price, int Planned, int Produced, string Status, IReadOnlyList<AssignmentVm> Assignments);
 public sealed record AssignmentVm(int Id, string Seamstress, int Planned, int Produced, decimal Price, decimal Total, string Status);
 
@@ -22,6 +30,7 @@ public sealed class DistribuicaoCreateVm
     [Range(1, int.MaxValue)] public int PlannedQuantity { get; set; }
     public decimal PricePerPiece { get; set; }
     public IReadOnlyList<LookupVm> Seamstresses { get; set; } = [];
+    public int PieceVariantId { get; set; }
 }
 
 public sealed class ProgressoVm
